@@ -34,7 +34,7 @@ export default function App() {
           </svg>
           <div>
             <h1>Zero-Knowledge Identity Proof — THEBES PoC</h1>
-            <p>I am 18 or older, without revealing my date of birth or exactly who I am</p>
+            <p>I am an Egyptian citizen, 18 or older, with a currently-valid digital ID — without revealing my date of birth, ID number, or exactly who I am</p>
           </div>
         </div>
         <div className="root-badge">

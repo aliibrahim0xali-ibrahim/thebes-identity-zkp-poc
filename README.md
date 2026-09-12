@@ -38,8 +38,8 @@ thebes_identity_poc/
 
 | Part | Status |
 |---|---|
-| The circuit (circom) + the proof (Groth16 via snarkjs) | **100% real** — generated and verified live in the browser, no simulation |
-| The 8-citizen Merkle tree | Real (Poseidon hashing), but the citizens' underlying data is mocked (no real institution integration yet that ingests an ID photo + selfie) |
+| The circuit (circom) + the proof (Groth16 via snarkjs) | **100% real** — generated and verified live in the browser, no simulation. Proves: tree membership, Egyptian citizenship (countryCode == 818), age >= 18, and that the digital ID card has not expired — without revealing the ID number, its exact expiry date, or the date of birth |
+| The 8-citizen Merkle tree | Real (Poseidon hashing over birthYear/salt/countryCode/idNumber/idExpiryDate), but the citizens' underlying data (including ID numbers) is entirely mocked — no real institution integration yet that ingests an ID photo + selfie, and no real Egyptian ID authority involved |
 | The `backend/main.mo` canister (identityRoot / Challenge / nullifier) | The source is real and deploy-ready, but it was **not actually compiled with `moc`** in the original sandbox — it needs a `mops.toml`, which this project now includes (see "Fixing the `moc`/`mo:base` build error" below) |
 | `lib/backendClient.js` in the frontend | **Temporary mock**: an in-memory canister inside the tab, with the exact same interface and state machine as `main.mo` (Pending/Verified/Expired, replay rejection). Once the real canister is deployed, the swap is mechanical (same function names) — see the comment at the top of the file |
 | Passkey sign-in (Memphis) | Mocked: pick from a list of ready-made identities instead of a real sign-in |

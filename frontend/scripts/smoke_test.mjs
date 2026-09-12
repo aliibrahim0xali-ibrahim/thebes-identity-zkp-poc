@@ -44,13 +44,17 @@ class MockCanister {
   }
 }
 
-async function proveFor(citizen, currentYear, root, challengeId) {
+async function proveFor(citizen, currentYear, currentDate, root, challengeId) {
   const input = {
     birthYear: citizen.birthYear,
     salt: citizen.salt,
+    countryCode: citizen.countryCode,
+    idNumber: citizen.idNumber,
+    idExpiryDate: citizen.idExpiryDate,
     pathIndices: citizen.pathIndices,
     pathElements: citizen.pathElements,
     currentYear: String(currentYear),
+    currentDate: String(currentDate),
     merkleRoot: root,
     challenge: challengeToField(challengeId),
   };
@@ -69,14 +73,16 @@ async function main() {
   canister.registerIdentityRoot(registry.root);
   const root = registry.root;
   const currentYear = new Date().getFullYear();
+  const d = new Date();
+  const currentDate = Number(`${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`);
 
   console.log("== Test 1: adult citizen, valid challenge -> accepted, JSON round-trips like the UI textarea ==");
   const adult = registry.citizens[0];
   const challengeA = canister.createChallenge("Acme Bank");
-  const proofBundleA = await proveFor(adult, currentYear, root, challengeA);
+  const proofBundleA = await proveFor(adult, currentYear, currentDate, root, challengeA);
   // simulate the UI's textarea JSON.stringify -> JSON.parse round trip
   const roundTripped = JSON.parse(JSON.stringify(proofBundleA));
-  const [nullifierA, , outRootA, outChallengeA] = roundTripped.publicSignals;
+  const [nullifierA, , , outRootA, outChallengeA] = roundTripped.publicSignals;
   check("outRoot matches canister root", outRootA === root);
   check("outChallenge matches challengeToField(challengeA)", outChallengeA === challengeToField(challengeA));
   const cryptoOkA = await snarkjs.groth16.verify(vkey, roundTripped.publicSignals, roundTripped.proof);
@@ -90,7 +96,7 @@ async function main() {
 
   console.log("== Test 3: same citizen, a different challenge -> different, unlinkable nullifier ==");
   const challengeB = canister.createChallenge("Beta Insurance");
-  const proofBundleB = await proveFor(adult, currentYear, root, challengeB);
+  const proofBundleB = await proveFor(adult, currentYear, currentDate, root, challengeB);
   const [nullifierB] = proofBundleB.publicSignals;
   check("nullifiers differ across challenges", nullifierA !== nullifierB);
   const consumeB = canister.consumeNullifier(challengeB, nullifierB);
@@ -101,9 +107,9 @@ async function main() {
   const challengeC = canister.createChallenge("Gamma Casino");
   let minorFailed = false;
   try {
-    await proveFor(minor, currentYear, root, challengeC);
+    await proveFor(minor, currentYear, currentDate, root, challengeC);
   } catch (e) {
-    minorFailed = /Error in template IdentityOver18/.test(String(e.message));
+    minorFailed = /Error in template IdentityCredential/.test(String(e.message));
   }
   check("minor's proof generation throws the age constraint error", minorFailed);
 
@@ -113,6 +119,17 @@ async function main() {
     "outChallenge != forged challenge (company would reject before calling verify)",
     outChallengeA !== wrongChallengeField
   );
+
+  console.log("== Test 6: an adult with an EXPIRED ID cannot construct a proof (ID-validity constraint) ==");
+  const expiredId = registry.citizens.find((c) => c.label.includes("EXPIRED"));
+  const challengeD = canister.createChallenge("Delta Telecom");
+  let expiredFailed = false;
+  try {
+    await proveFor(expiredId, currentYear, currentDate, root, challengeD);
+  } catch (e) {
+    expiredFailed = /Error in template IdentityCredential/.test(String(e.message));
+  }
+  check("expired-ID citizen's proof generation throws the ID-validity constraint error", expiredFailed);
 
   console.log(`\n${passed} passed, ${failed} failed`);
   process.exit(failed > 0 ? 1 : 0); // snarkjs leaves curve worker handles open otherwise

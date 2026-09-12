@@ -57,24 +57,35 @@ export function challengeToField(challengeId) {
 const FIELD_MODULUS =
   21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 
-// citizen = { birthYear, salt, pathIndices, pathElements } from mock_registry.json
+// citizen = { birthYear, salt, countryCode, idNumber, idExpiryDate,
+//             pathIndices, pathElements } from mock_registry.json
 // merkleRoot = the identityRoot published by the (mock) institution / canister
-// currentYear = public input the circuit checks age against
-export async function generateProof({ citizen, merkleRoot, currentYear, challengeId }) {
+// currentYear, currentDate = public inputs the circuit checks age/ID-validity against
+//
+// idNumber and idExpiryDate never appear in the proof's public signals — they
+// only feed the private leaf commitment inside the circuit. The proof only
+// ever reveals: tree membership, age >= 18, countryCode == Egypt, and
+// "idExpiryDate has not passed currentDate" — never the number or the date
+// itself. See backend/circuits/identity_proof.circom for the constraints.
+export async function generateProof({ citizen, merkleRoot, currentYear, currentDate, challengeId }) {
   const input = {
     birthYear: citizen.birthYear,
     salt: citizen.salt,
+    countryCode: citizen.countryCode,
+    idNumber: citizen.idNumber,
+    idExpiryDate: citizen.idExpiryDate,
     pathIndices: citizen.pathIndices,
     pathElements: citizen.pathElements,
     currentYear: String(currentYear),
+    currentDate: String(currentDate),
     merkleRoot,
     challenge: challengeToField(challengeId),
   };
 
   const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, WASM_URL, ZKEY_URL);
-  // publicSignals order (per the compiled circuit): [nullifier, currentYear, merkleRoot, challenge]
-  const [nullifier, outCurrentYear, outRoot, outChallenge] = publicSignals;
-  return { proof, publicSignals, nullifier, outCurrentYear, outRoot, outChallenge };
+  // publicSignals order (per the compiled circuit): [nullifier, currentYear, currentDate, merkleRoot, challenge]
+  const [nullifier, outCurrentYear, outCurrentDate, outRoot, outChallenge] = publicSignals;
+  return { proof, publicSignals, nullifier, outCurrentYear, outCurrentDate, outRoot, outChallenge };
 }
 
 export async function verifyProof(proof, publicSignals) {

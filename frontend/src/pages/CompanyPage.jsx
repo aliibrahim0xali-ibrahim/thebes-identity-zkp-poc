@@ -34,7 +34,7 @@ export default function CompanyPage() {
       const { proof, publicSignals } = parsed;
       if (!proof || !publicSignals) throw new Error("Proof payload is incomplete (needs proof and publicSignals)");
 
-      const [nullifier, , outRoot, outChallenge] = publicSignals;
+      const [nullifier, , , outRoot, outChallenge] = publicSignals;
 
       const challenge = await backend.getChallenge(verifyChallengeId.trim());
       if (!challenge) {
@@ -83,7 +83,7 @@ export default function CompanyPage() {
       if (consumeRes.ok) {
         setVerifyResult({
           ok: true,
-          message: "Identity verified ✅ — this person is a registered member of the identity tree and is 18 or older, nothing else.",
+          message: "Identity verified ✅ — this person is a registered member of the identity tree, an Egyptian citizen, 18 or older, and holds a currently-valid digital ID — nothing else.",
           verifiedAt: new Date().toISOString(),
         });
       } else {
@@ -133,8 +133,8 @@ export default function CompanyPage() {
         <p className="lead">
           Open to anyone without sign-in: its only inputs are the
           Challenge and the proof payload. The output is either
-          "Identity verified ✅" or the reason for rejection — no extra
-          personal data involved.
+          "Identity verified ✅" (registered, Egyptian, 18+, valid ID) or the
+          reason for rejection — no extra personal data involved.
         </p>
         <div className="field">
           <label>Challenge ID</label>

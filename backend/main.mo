@@ -62,7 +62,7 @@ persistent actor IssuerRegistry {
 
   // --- state (persisted across upgrades by default, since this is a `persistent actor`) ---
   var issuers : [IssuerRecord] = [];
-  var admin : Principal = Principal.fromText("aaaaa-aa"); // replace at deploy time
+  let admin : Principal = Principal.fromText("aaaaa-aa"); // replace at deploy time
 
   // The Merkle root over enrolled citizens' commitments. `null` until the
   // institution (or, for now, the mock script) registers one.

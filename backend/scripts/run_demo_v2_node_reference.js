@@ -33,6 +33,7 @@ const { buildPoseidon } = require("circomlibjs");
 const BUILD_DIR = path.join(__dirname, "..", "build_v2");
 const REGISTRY_PATH = path.join(BUILD_DIR, "mock_registry.json");
 const CURRENT_YEAR = 2026n;
+const CURRENT_DATE = 20260912n; // YYYYMMDD — "today" for this reference run
 
 // Mimics issuer_registry.mo's in-memory state for this demo run.
 const canisterMock = {
@@ -76,9 +77,13 @@ async function proveAndVerify({ citizen, challenge, expectAccept }) {
   const input = {
     birthYear: citizen.birthYear,
     salt: citizen.salt,
+    countryCode: citizen.countryCode,
+    idNumber: citizen.idNumber,
+    idExpiryDate: citizen.idExpiryDate,
     pathIndices: citizen.pathIndices,
     pathElements: citizen.pathElements,
     currentYear: CURRENT_YEAR.toString(),
+    currentDate: CURRENT_DATE.toString(),
     merkleRoot: canisterMock.identityRoot,
     challenge: challengeField,
   };
@@ -91,11 +96,11 @@ async function proveAndVerify({ citizen, challenge, expectAccept }) {
     }
 
     // publicSignals order follows the circuit's `public [...]` + outputs:
-    // [nullifier, currentYear, merkleRoot, challenge] for this compiled circuit.
-    const [nullifier, outCurrentYear, outRoot, outChallenge] = publicSignals;
+    // [nullifier, currentYear, currentDate, merkleRoot, challenge] for this compiled circuit.
+    const [nullifier, outCurrentYear, outCurrentDate, outRoot, outChallenge] = publicSignals;
 
     console.log(`  proof generated (${JSON.stringify(proof).length} bytes)`);
-    console.log(`  public signals -> currentYear=${outCurrentYear}, merkleRoot matches: ${outRoot === canisterMock.identityRoot}, nullifier=${nullifier.slice(0, 16)}...`);
+    console.log(`  public signals -> currentYear=${outCurrentYear}, currentDate=${outCurrentDate}, merkleRoot matches: ${outRoot === canisterMock.identityRoot}, nullifier=${nullifier.slice(0, 16)}...`);
 
     const cryptoOk = await snarkjs.groth16.verify(vkey, publicSignals, proof);
     if (!cryptoOk) {
@@ -118,7 +123,7 @@ async function proveAndVerify({ citizen, challenge, expectAccept }) {
       console.log("  UNEXPECTED FAILURE:", e.message);
       return null;
     }
-    console.log("  As expected: the circuit refuses to produce a proof (age constraint unsatisfied).");
+    console.log("  As expected: the circuit refuses to produce a proof (a constraint — age or ID validity — is unsatisfied).");
     return null;
   }
 }
@@ -172,6 +177,13 @@ async function main() {
   const challengeC = canisterMock.createChallenge("Gamma Casino");
   const minor = registry.citizens.find((c) => c.label.includes("MINOR"));
   await proveAndVerify({ citizen: minor, challenge: challengeC, expectAccept: false });
+  console.log();
+
+  // ---------- Scenario E: negative control — an adult with an EXPIRED ID card ----------
+  console.log("== 7) Negative control: citizen_4 is an adult but their ID has EXPIRED ==");
+  const challengeD = canisterMock.createChallenge("Delta Telecom");
+  const expiredId = registry.citizens.find((c) => c.label.includes("EXPIRED"));
+  await proveAndVerify({ citizen: expiredId, challenge: challengeD, expectAccept: false });
   console.log();
 
   console.log("== Summary ==");

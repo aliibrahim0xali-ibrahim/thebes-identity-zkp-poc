@@ -6,6 +6,14 @@ import { passkeysSupported, passkeySignIn, devModeSignIn, citizenIndexForSession
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+function todayAsYyyymmdd() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return Number(`${d.getFullYear()}${mm}${dd}`);
+}
+const CURRENT_DATE = todayAsYyyymmdd();
+
 // Challenge ids are 16 random bytes hex-encoded by backendClient.js'
 // randomChallengeId() — so "hexadecimal, even length, non-empty" is the
 // actual expected shape, not an arbitrary rule.
@@ -95,6 +103,7 @@ export default function CitizenPage() {
         citizen,
         merkleRoot: root,
         currentYear: CURRENT_YEAR,
+        currentDate: CURRENT_DATE,
         challengeId: challengeId.trim(),
       });
 
@@ -114,11 +123,11 @@ export default function CitizenPage() {
     } catch (err) {
       setPhase("error");
       const msg = String(err?.message || err);
-      const isAgeFail = /Error in template IdentityOver18|Assert Failed/i.test(msg);
+      const isConstraintFail = /Error in template IdentityCredential|Assert Failed/i.test(msg);
       setResult({
         ok: false,
-        message: isAgeFail
-          ? "Could not generate the proof: the \"age >= 18\" constraint isn't satisfied for this person. This is expected if you picked a minor citizen."
+        message: isConstraintFail
+          ? "Could not generate the proof: one of the attested facts (18+, or ID not expired) doesn't hold for this person. This is expected if you picked a minor or an expired-ID citizen."
           : `Could not generate the proof: ${msg}`,
       });
     }
@@ -179,19 +188,21 @@ export default function CitizenPage() {
             <h2>Request a proof for a company</h2>
             <p className="lead">
               Paste the Challenge code the company gave you, and your wallet
-              (the browser) will generate a real zk-SNARK proof that you're a
-              member of the identity tree and are 18 or older, bound to this
-              specific Challenge — without ever sending your date of birth.
+              (the browser) will generate a real zk-SNARK proof attesting
+              that you're a member of the identity tree, an Egyptian citizen,
+              18 or older, and hold a digital ID card that has not expired —
+              bound to this specific Challenge — without ever revealing your
+              date of birth, your ID card number, or its exact expiry date.
             </p>
             <p className="footnote" style={{ marginTop: -4, marginBottom: 12 }}>
               Note: the identity shown above (<strong>{citizen?.label ?? "…"}</strong>,
-              its birth-year bucket and salt) is mock demo data standing in for
-              a real citizen record — it exists only in this project's{" "}
-              <code>mock_registry.json</code>. The Challenge/nullifier
-              handling below it runs against the real backend state machine
-              (mirrored in <code>backendClient.js</code> from{" "}
-              <code>main.mo</code>), so the accept/reject/replay behavior you
-              see is not simulated.
+              its birth-year bucket, ID number, and ID expiry date) is mock
+              demo data standing in for a real citizen record — it exists
+              only in this project's <code>mock_registry.json</code>. The
+              Challenge/nullifier handling below it runs against the real
+              backend state machine (mirrored in <code>backendClient.js</code>{" "}
+              from <code>main.mo</code>), so the accept/reject/replay
+              behavior you see is not simulated.
             </p>
             <div className="field">
               <label>Challenge ID (hexadecimal)</label>
@@ -250,8 +261,9 @@ export default function CitizenPage() {
 
           <p className="footnote">
             Every computation here actually happens inside the browser (WASM +
-            Groth16 via snarkjs) — no server ever sees your birthYear or salt.
-            Only the root and the Challenge ever leave this page.
+            Groth16 via snarkjs) — no server ever sees your birthYear, ID
+            number, ID expiry date, or salt. Only the root, the Challenge,
+            and today's date (year and full date) ever leave this page.
           </p>
         </>
       )}
