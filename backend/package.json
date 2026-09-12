@@ -1,0 +1,18 @@
+{
+  "name": "thebes-identity-poc-backend",
+  "version": "2.0.0",
+  "private": true,
+  "description": "THEBES age/identity ZK proof PoC — Motoko canister (main.mo) + circom circuit + mock-institution tooling. This is the 'backend' half deployed with thebes-deploy.",
+  "scripts": {
+    "compile:circuit": "circom2 circuits/identity_proof.circom --r1cs --wasm --sym -o build_v2",
+    "mock:registry": "node scripts/build_mock_registry.js",
+    "demo:node": "node scripts/run_demo_v2_node_reference.js",
+    "setup:trusted": "node scripts/run_trusted_setup.js"
+  },
+  "dependencies": {
+    "circom2": "^0.2.23",
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7",
+    "snarkjs": "^0.7.6"
+  }
+}

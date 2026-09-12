@@ -1,0 +1,30 @@
+[project]
+name = "thebes-identity-zkp-poc"
+default_network = "wan"
+chain_id = 2026 # match the network you are actually joining — see thebes-deploy docs
+
+[networks.wan]
+validators = [
+    "https://memphis.mercaturaforum.com/deploy-api/v0",
+    "https://memphis.mercaturaforum.com/deploy-api/v1",
+    "https://memphis.mercaturaforum.com/deploy-api/v2",
+    "https://memphis.mercaturaforum.com/deploy-api/v3",
+]
+boundary = "https://memphis.mercaturaforum.com"
+routing  = "smart"
+
+# --- backend: the Motoko canister (identityRoot / challenges / nullifiers) --
+[canisters.backend]
+type   = "backend-motoko"
+cid    = "auto"                      # first deploy allocates + writes back a real id
+source = "backend/main.mo"
+wasm   = "backend/build/backend.wasm"
+build  = "mkdir -p backend/build && moc $(mops sources) --legacy-persistence -o backend/build/backend.wasm backend/main.mo"
+
+# --- frontend: the static React app, served as an asset canister -----------
+[canisters.web]
+type   = "frontend"
+cid    = "auto"
+wasm   = "asset_canister.wasm"       # fetched once, see README "Deploy" section
+bundle = "frontend/dist"             # `npm run build` output
+health_check_url = "/index.html"

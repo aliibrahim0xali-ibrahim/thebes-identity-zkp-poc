@@ -1,0 +1,7 @@
+[dependencies]
+base = "0.14.8"
+
+[toolchain]
+# Leave this to your installed moc unless CI needs a pin. If `thebes-deploy build`
+# reports a moc/base version mismatch, pin an explicit "moc" version here that
+# matches the base release above.

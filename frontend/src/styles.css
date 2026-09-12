@@ -1,0 +1,271 @@
+/* Design tokens ---------------------------------------------------------
+   Subject: an on-chain, zero-knowledge age/identity check. The palette
+   leans on ink + parchment-gold (a nod to sealed records / Thebes) rather
+   than a generic dark-mode SaaS look; data (hashes, nullifiers, root)
+   is always set in mono so it visually reads as "verifiable material"
+   distinct from the surrounding prose. */
+:root {
+  --ink: #12151a;
+  --ink-raised: #191d24;
+  --ink-line: #2a2f38;
+  --parchment: #f4efe4;
+  --parchment-dim: #cfc8b8;
+  --gold: #c9a24b;
+  --gold-soft: #7a6733;
+  --teal: #4fa89b;
+  --red: #d9645a;
+  --radius: 10px;
+
+  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+.app-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- header / eye motif -------------------------------------- */
+.app-header {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--ink-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  flex: none;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.brand p {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--parchment-dim);
+}
+
+.root-badge {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--parchment-dim);
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 340px;
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dot.on { background: var(--teal); box-shadow: 0 0 0 3px rgba(79,168,155,0.15); }
+.dot.off { background: var(--red); }
+
+.root-badge .val {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- tabs ------------------------------------------------------ */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--ink-line);
+}
+
+.tab-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--parchment-dim);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 14px 6px;
+  margin-inline-end: 28px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab-btn:hover { color: var(--parchment); }
+
+.tab-btn.active {
+  color: var(--parchment);
+  border-bottom-color: var(--gold);
+}
+
+/* ---------- layout ------------------------------------------------------ */
+.main {
+  flex: 1;
+  padding: 32px 24px 60px;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.card .lead {
+  margin: 0 0 18px;
+  color: var(--parchment-dim);
+  font-size: 0.92rem;
+  max-width: 60ch;
+}
+
+.field { margin-bottom: 14px; }
+
+.field label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--parchment-dim);
+  margin-bottom: 6px;
+}
+
+.field input, .field select {
+  width: 100%;
+  background: var(--ink);
+  border: 1px solid var(--ink-line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--parchment);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.field input:focus, .field select:focus, button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+button.primary {
+  appearance: none;
+  border: none;
+  background: var(--gold);
+  color: #1b1508;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 11px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.05s ease;
+}
+button.primary:hover { filter: brightness(1.08); }
+button.primary:active { transform: translateY(1px); }
+button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.ghost {
+  appearance: none;
+  border: 1px solid var(--ink-line);
+  background: transparent;
+  color: var(--parchment);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+button.ghost:hover { border-color: var(--gold-soft); }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* ---------- data / mono chips ------------------------------------------ */
+.mono-block {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  background: var(--ink);
+  border: 1px solid var(--ink-line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  word-break: break-all;
+  color: var(--parchment);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  font-size: 0.86rem;
+}
+.kv dt { color: var(--parchment-dim); }
+.kv dd { margin: 0; font-family: var(--font-mono); word-break: break-all; }
+
+/* ---------- status banners --------------------------------------------- */
+.banner {
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  margin-top: 14px;
+  border: 1px solid transparent;
+}
+.banner.ok { background: rgba(79,168,155,0.12); border-color: rgba(79,168,155,0.4); }
+.banner.err { background: rgba(217,100,90,0.12); border-color: rgba(217,100,90,0.4); }
+.banner.info { background: rgba(201,162,75,0.1); border-color: rgba(201,162,75,0.35); }
+
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(244,239,228,0.25);
+  border-top-color: var(--parchment);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-left: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.footnote {
+  color: var(--parchment-dim);
+  font-size: 0.78rem;
+  margin-top: 28px;
+  line-height: 1.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}

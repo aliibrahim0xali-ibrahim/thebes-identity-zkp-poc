@@ -1,0 +1,43 @@
+pragma circom 2.0.0;
+
+// PoC circuit: prove "the holder of a credential committed to at enrollment
+// is at least 18 years old" without revealing the birth year.
+//
+// At enrollment, the issuer (e.g. "هوية") computes:
+//     commitment = Poseidon(birthYear, salt)
+// and publishes/anchors `commitment` (e.g. on the THEBES registry canister)
+// as part of the signed credential. `birthYear` and `salt` never leave the
+// citizen's wallet after that point.
+//
+// At verification time, the wallet proves it knows a (birthYear, salt) pair
+// that (a) hashes to the published commitment and (b) implies age >= 18,
+// without revealing birthYear or salt to the verifier.
+
+include "../node_modules/circomlib/circuits/poseidon.circom";
+include "../node_modules/circomlib/circuits/comparators.circom";
+
+template AgeOver18() {
+    // --- private inputs (known only to the wallet) ---
+    signal input birthYear;
+    signal input salt;
+
+    // --- public inputs (known to the verifier / anchored on-chain) ---
+    signal input currentYear;
+    signal input commitment;
+
+    // 1) Binding: the private (birthYear, salt) must reproduce the
+    //    commitment the issuer signed at enrollment time.
+    component hasher = Poseidon(2);
+    hasher.inputs[0] <== birthYear;
+    hasher.inputs[1] <== salt;
+    commitment === hasher.out;
+
+    // 2) Predicate: currentYear - birthYear >= 18.
+    //    16 bits is enough range for a year-difference (0..65535).
+    component ge = GreaterEqThan(16);
+    ge.in[0] <== currentYear - birthYear;
+    ge.in[1] <== 18;
+    ge.out === 1;
+}
+
+component main {public [currentYear, commitment]} = AgeOver18();

@@ -1,0 +1,89 @@
+// issuer_registry.mo
+//
+// Anchoring layer for the PoC — deployed on THEBES (testnet).
+// This canister stores NO personal data whatsoever. It only publishes:
+//   1) the public keys of authorized credential issuers (e.g. "هوية")
+//   2) a single Merkle root committing to the set of revoked credentials
+//
+// Any verifier (a government service backend) can call this canister to
+// check that a proof was produced against a still-valid, still-authorized
+// issuer key, without ever learning who the citizen is.
+
+import Array "mo:base/Array";
+import Principal "mo:base/Principal";
+import Blob "mo:base/Blob";
+import Text "mo:base/Text";
+import Time "mo:base/Time";
+
+actor IssuerRegistry {
+
+  public type IssuerId = Text;
+
+  public type IssuerRecord = {
+    id : IssuerId;
+    publicKey : Blob;      // Ed25519 / threshold public key of the issuer
+    registeredAt : Int;
+    active : Bool;
+  };
+
+  // --- state (stable across upgrades) ---
+  stable var issuers : [IssuerRecord] = [];
+  stable var revocationRoot : Blob = Blob.fromArray([]);
+  stable var admin : Principal = Principal.fromText("aaaaa-aa"); // replace at deploy time
+
+  // --- admin-only writes ---
+
+  public shared (msg) func registerIssuer(id : IssuerId, publicKey : Blob) : async Bool {
+    if (msg.caller != admin) { return false };
+    let exists = Array.find<IssuerRecord>(issuers, func(r) { r.id == id });
+    switch (exists) {
+      case (?_) { false }; // already registered — use rotateIssuerKey instead
+      case null {
+        let record : IssuerRecord = {
+          id;
+          publicKey;
+          registeredAt = Time.now();
+          active = true;
+        };
+        issuers := Array.append(issuers, [record]);
+        true;
+      };
+    };
+  };
+
+  public shared (msg) func setIssuerActive(id : IssuerId, active : Bool) : async Bool {
+    if (msg.caller != admin) { return false };
+    issuers := Array.map<IssuerRecord, IssuerRecord>(
+      issuers,
+      func(r) {
+        if (r.id == id) { { r with active } } else { r };
+      },
+    );
+    true;
+  };
+
+  // Only the 32-byte Merkle root moves here — never the underlying
+  // credential identifiers or personal data.
+  public shared (msg) func updateRevocationRoot(newRoot : Blob) : async Bool {
+    if (msg.caller != admin) { return false };
+    revocationRoot := newRoot;
+    true;
+  };
+
+  // --- public reads (what verifiers call) ---
+
+  public query func getIssuerKey(id : IssuerId) : async ?Blob {
+    switch (Array.find<IssuerRecord>(issuers, func(r) { r.id == id and r.active })) {
+      case (?r) { ?r.publicKey };
+      case null { null };
+    };
+  };
+
+  public query func getRevocationRoot() : async Blob {
+    revocationRoot;
+  };
+
+  public query func listIssuers() : async [IssuerRecord] {
+    issuers;
+  };
+};
